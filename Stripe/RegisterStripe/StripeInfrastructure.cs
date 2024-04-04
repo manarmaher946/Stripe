@@ -11,8 +11,8 @@ namespace Stripe_Payments_Web_Api
 
             return services
                 .AddScoped<CustomerService>()
-                .AddScoped<ChargeService>()
-                .AddScoped<TokenService>()
+                .AddScoped<PaymentIntentService>()
+                .AddScoped<PaymentMethodService>()
             .AddScoped<Istripeservices, StripeAppServices>();
         }
     }

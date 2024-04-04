@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Controllers.Models.Stripe;
 using Stripe.Services;
@@ -20,12 +17,12 @@ namespace Stripe_Payments_Web_Api.Controllers
         }
 
         [HttpPost("customer/add")]
-        public async Task<ActionResult<StripeCustomer>> AddStripeCustomer([FromBody] AddStripeCustomer customer,CancellationToken ct)
-        {
-            StripeCustomer createdCustomer = await _stripeService.AddStripeCustomerAsync(customer.Token,customer,ct);
+        //public async Task<ActionResult<StripeCustomer>> AddStripeCustomer([FromBody] AddStripeCustomer customer,CancellationToken ct)
+        //{
+        //    StripeCustomer createdCustomer = await _stripeService.AddStripeCustomerAsync(customer.Token,customer,ct);
 
-            return StatusCode(StatusCodes.Status200OK, createdCustomer);
-        }
+        //    return StatusCode(StatusCodes.Status200OK, createdCustomer);
+        //}
 
         [HttpPost("payment/add")]
         public async Task<ActionResult<StripePayment>> AddStripePayment([FromBody] AddStripePayment payment,CancellationToken ct)

@@ -1,55 +1,101 @@
 ﻿using Stripe.Controllers.Models.Stripe;
+using Stripe.Issuing;
 
 namespace Stripe.Services
 {
     public class StripeAppServices : Istripeservices
     {
         private readonly CustomerService _customerService;
-        private readonly ChargeService _chargeService;
+        private readonly PaymentMethodService _paymentMethodService;
+        private readonly PaymentIntentService _paymentIntentService;
 
-        public StripeAppServices(CustomerService customerService, ChargeService chargeService)
+        public StripeAppServices(CustomerService customerService, PaymentIntentService PaymentIntentService, PaymentMethodService paymentMethodService)
         {
             _customerService = customerService;
-            _chargeService = chargeService;
+            _paymentIntentService = PaymentIntentService;
+            _paymentMethodService = paymentMethodService;
         }
 
-        public async Task<StripeCustomer> AddStripeCustomerAsync(string token, AddStripeCustomer customer, CancellationToken ct)
-        {
-            // Create a customer using the token
-            var options = new CustomerCreateOptions
-            {
-                Source = token,
-                Email = customer.Email,
-                Name = customer.Name
-            };
-            var createdCustomer = await _customerService.CreateAsync(options, cancellationToken: ct);
+        //public async Task<StripeCustomer> AddStripeCustomerAsync(AddStripeCustomer customer, CancellationToken ct)
+        //{
+        //    // Set Stripe Token options based on customer data
+        //    TokenCreateOptions tokenOptions = new TokenCreateOptions
+        //    {
+        //        Card = new TokenCardOptions
+        //        {
+        //            Name = customer.Name,
+        //            Number = customer.CreditCard.CardNumber,
+        //            ExpYear = customer.CreditCard.ExpirationYear,
+        //            ExpMonth = customer.CreditCard.ExpirationMonth,
+        //            Cvc = customer.CreditCard.Cvc
+        //        }
+        //    };
 
-            // Return the created customer
-            return new StripeCustomer(createdCustomer.Name, createdCustomer.Email, createdCustomer.Id);
-        }
+        //    // Create new Stripe Token
+        //    Token stripeToken = await _tokenService.CreateAsync(tokenOptions, null, ct);
+
+        //    // Set Customer options using
+        //    CustomerCreateOptions customerOptions = new CustomerCreateOptions
+        //    {
+        //        Name = customer.Name,
+        //        Email = customer.Email,
+        //        Source = stripeToken.Id
+        //    };
+
+        //    // Create customer at Stripe
+        //    Customer createdCustomer = await _customerService.CreateAsync(customerOptions, null, ct);
+
+        //    // Return the created customer at stripe
+        //    return new StripeCustomer(createdCustomer.Name, createdCustomer.Email, createdCustomer.Id);
+        //}
+
 
         public async Task<StripePayment> AddStripePaymentAsync(AddStripePayment payment, CancellationToken ct)
         {
-            // Create a charge for the payment
-            var options = new ChargeCreateOptions
+            var paymentMethodOptions = new PaymentMethodCreateOptions
+            {
+                Type = "card",
+                Card = new PaymentMethodCardOptions
+                {
+                    Token = payment.stripeCard.Token
+                },
+               
+            };
+
+            // Create a PaymentMethod
+            var paymentMethod = await _paymentMethodService.CreateAsync(paymentMethodOptions, cancellationToken: ct);
+
+            // Attach the PaymentMethod to a Customer
+            var customerOptions = new CustomerCreateOptions
+            {
+                Email = "MANARMAHER@GMAIL.COM",
+                PaymentMethod = paymentMethod.Id,
+            };
+            var customer = await _customerService.CreateAsync(customerOptions, cancellationToken: ct);
+
+            var paymentIntentOptions = new PaymentIntentCreateOptions
             {
                 Amount = payment.Amount,
                 Currency = payment.Currency,
-                Customer = payment.CustomerId,
-                Description = payment.description,
-                ReceiptEmail = payment.ReceiptEmail
+                Customer = customer.Id,
+                PaymentMethod = paymentMethod.Id,
+                Confirm = true,
+                ConfirmationMethod = "manual",
+                ReturnUrl = "https://example.com/return-url",
             };
-            var createdCharge = await _chargeService.CreateAsync(options, cancellationToken: ct);
+            var paymentIntent = await _paymentIntentService.CreateAsync(paymentIntentOptions, cancellationToken: ct);
+
 
             // Return the created payment
             return new StripePayment(
-                createdCharge.CustomerId,
-                createdCharge.ReceiptEmail,
-                createdCharge.Description,
-                createdCharge.Currency,
-                createdCharge.Amount,
-                createdCharge.Id);
+                paymentIntent.CustomerId,
+                paymentIntent.ReceiptEmail,
+                paymentIntent.Description,
+                paymentIntent.Currency,
+                paymentIntent.Amount,
+                paymentIntent.Id);
         }
     }
-}
+}    
+
 
